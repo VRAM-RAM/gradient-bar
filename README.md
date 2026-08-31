@@ -63,7 +63,7 @@ Every template uses colors safe on both light and dark terminals, and degrades g
 
 ### Gradients
 
-`Gradient` is an enum that provides **Gradients** for the progress bar.
+`Gradient` is an enum that provides **13** *Gradients* for the progress bar.
 
 | Variant | Look |
 | --- | --- |
@@ -73,6 +73,13 @@ Every template uses colors safe on both light and dark terminals, and degrades g
 | `Mint` | Aqua green to mint |
 | `Ember` | Amber to rose |
 | `Ice` | Cool white to pale blue |
+| `Aurora` | Blue / light Cyan geen to light purple |
+| `Neon` | Cyan to light blue / purple |
+| `Rose` | Pink to light Coral |
+| `Forest` | Green to light green |
+| `Midnight` | Dark blue to light purple |
+| `Twilight` | Gray-blue to soft lavender |
+| `Coral` | Deep Coral to soft peach |
 
 *Gradients* are rendered using `std::fmt::Write`.
 
@@ -167,7 +174,7 @@ sp.finish_with_message("Key ready");
 #### Clean up afterwards
 
 ```rust
-let mut bar = GradientProgressBar::new(total, "Packaging".into(), BarStyle::ClearOnFinish, None);
+let mut bar = GradientProgressBar::new(total, "Packaging", BarStyle::ClearOnFinish, None);
 // ... bar.update(x) ...
 bar.finish_and_clear();
 ```

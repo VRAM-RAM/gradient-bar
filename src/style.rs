@@ -6,10 +6,11 @@ use indicatif::{ProgressState, ProgressStyle};
 /// This is the **layout**, independent of the gradient. Pick a layout here, and
 /// pair it with any [`Gradient`] (or none, to keep the classic
 /// two-tone `wide_bar`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum BarStyle {
     /// The flagship layout: spinner + message + elapsed + wide bar with
     /// `bytes/total` + percent + ETA. Best suited to a byte-based workload.
+    #[default]
     Main,
     /// Compact single-line layout, for tight output or secondary bars.
     Minified,

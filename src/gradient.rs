@@ -1,4 +1,4 @@
-use std::fmt::Write as _;
+use std::fmt::{Display, Write as _};
 
 /// A curated set of smooth, true-color progress gradients.
 ///
@@ -6,32 +6,66 @@ use std::fmt::Write as _;
 /// color across the bar, giving a gradual multi-stop feel rather than the flat
 /// two-tone `wide_bar`. Works on any terminal with 24-bit color support (the
 /// default on modern terminals); degraded gracefully elsewhere.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum Gradient {
     /// Deep blue -> ice cyan. The Enkryptit signature look.
+    #[default]
     Ocean,
+
     /// Violet -> magenta.
     Violet,
+
     /// Warm orange -> gold.
     Sunset,
+
     /// Aqua green -> mint.
     Mint,
-    /// Amber -> rose (danger / critical ops).
+
+    /// Amber -> Light Red (danger / critical ops).
     Ember,
+
     /// Cool white -> pale blue.
     Ice,
+
+    /// Blue / light cyan green -> light purple 
+    Aurora,
+
+    /// Cyan -> light blue / purple
+    Neon,
+
+    /// Pink -> light Coral
+    Rose,
+
+    /// Green -> light green
+    Forest,
+
+    /// Dark blue -> light purple
+    Midnight,
+
+    /// A gray-blue -> soft lavender.
+    Twilight,
+
+    /// Deep coral -> soft peach.
+    Coral,
 }
 
 impl Gradient {
     /// The `(start, end)` RGB stops for this gradient.
-    fn stops(self) -> ((u8, u8, u8), (u8, u8, u8)) {
+    pub fn stops(self) -> ((u8, u8, u8), (u8, u8, u8)) {
         match self {
             Gradient::Ocean => ((8, 150, 255), (150, 235, 255)),
             Gradient::Violet => ((140, 60, 255), (255, 90, 220)),
             Gradient::Sunset => ((255, 120, 60), (255, 220, 90)),
             Gradient::Mint => ((40, 200, 150), (150, 245, 190)),
-            Gradient::Ember => ((255, 150, 50), (255, 60, 100)),
+            Gradient::Ember => ((255, 120, 30), (220, 40, 60)),
             Gradient::Ice => ((150, 200, 255), (245, 250, 255)),
+            Gradient::Aurora => ((80, 255, 210), (170, 80, 255)),
+            Gradient::Neon => ((0, 255, 220), (100, 120, 255)),
+            Gradient::Rose => ((255, 120, 180), (255, 170, 130)),
+            Gradient::Forest => ((30, 150, 90), (180, 220, 80)),
+            Gradient::Twilight => ((25, 65, 130), (155, 135, 210)),
+            Gradient::Midnight => ((20, 30, 80), (100, 70, 180)),
+            Gradient::Coral => ((220, 80, 85), (255, 175, 135)),
         }
     }
 
@@ -75,7 +109,20 @@ impl Gradient {
             Gradient::Mint => "Mint",
             Gradient::Ember => "Ember",
             Gradient::Ice => "Ice",
+            Gradient::Aurora => "Aurora",
+            Gradient::Twilight => "Twilight",
+            Gradient::Forest => "Forest",
+            Gradient::Midnight => "Midnight",
+            Gradient::Neon => "Neon",
+            Gradient::Rose => "Rose",
+            Gradient::Coral => "Coral",
         }
+    }
+}
+
+impl Display for Gradient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "`{}`", self.name())
     }
 }
 
@@ -91,6 +138,13 @@ mod tests {
         assert_eq!(Gradient::Mint.name(), "Mint");
         assert_eq!(Gradient::Ember.name(), "Ember");
         assert_eq!(Gradient::Ice.name(), "Ice");
+        assert_eq!(Gradient::Aurora.name(), "Aurora");
+        assert_eq!(Gradient::Neon.name(), "Neon");
+        assert_eq!(Gradient::Rose.name(), "Rose");
+        assert_eq!(Gradient::Forest.name(), "Forest");
+        assert_eq!(Gradient::Midnight.name(), "Midnight");
+        assert_eq!(Gradient::Twilight.name(), "Twilight");
+        assert_eq!(Gradient::Coral.name(), "Coral");
     }
 
     #[test]
@@ -102,6 +156,13 @@ mod tests {
             Gradient::Mint,
             Gradient::Ember,
             Gradient::Ice,
+            Gradient::Aurora,
+            Gradient::Neon,
+            Gradient::Rose,
+            Gradient::Forest,
+            Gradient::Midnight,
+            Gradient::Twilight,
+            Gradient::Coral,
         ]
         .iter()
         .map(|g| g.stops())
@@ -179,6 +240,33 @@ mod tests {
     }
 
     #[test]
+    fn default_is_ocean() {
+        assert_eq!(Gradient::default(), Gradient::Ocean);
+    }
+
+    #[test]
+    fn display_formats_with_backticks() {
+        for grad in [
+            Gradient::Ocean,
+            Gradient::Violet,
+            Gradient::Sunset,
+            Gradient::Mint,
+            Gradient::Ember,
+            Gradient::Ice,
+            Gradient::Aurora,
+            Gradient::Neon,
+            Gradient::Rose,
+            Gradient::Forest,
+            Gradient::Midnight,
+            Gradient::Twilight,
+            Gradient::Coral,
+        ] {
+            let expected = format!("`{}`", grad.name());
+            assert_eq!(format!("{grad}"), expected, "Display for {grad:?}");
+        }
+    }
+
+    #[test]
     fn render_each_variant_does_not_panic() {
         for grad in [
             Gradient::Ocean,
@@ -187,6 +275,13 @@ mod tests {
             Gradient::Mint,
             Gradient::Ember,
             Gradient::Ice,
+            Gradient::Aurora,
+            Gradient::Neon,
+            Gradient::Rose,
+            Gradient::Forest,
+            Gradient::Midnight,
+            Gradient::Twilight,
+            Gradient::Coral,
         ] {
             grad.render(0.0, 0);
             grad.render(0.33, 30);

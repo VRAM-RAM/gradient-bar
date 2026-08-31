@@ -21,10 +21,10 @@ pub struct GradientProgressBar {
 impl GradientProgressBar {
     /// Create a bar with a known total, an explicit layout and an explicit
     /// style (gradient or not).
-    pub fn new(len: u64, msg: String, style: BarStyle, gradient: Option<Gradient>) -> Self {
+    pub fn new(len: u64, msg: impl Into<String>, style: BarStyle, gradient: Option<Gradient>) -> Self {
         let bar_width = BarStyle::DEFAULT_GRADIENT_WIDTH;
         let pb = ProgressBar::new(len)
-            .with_message(msg)
+            .with_message(msg.into())
             .with_style(style.to_progress_style(gradient, bar_width));
         Self {
             pb,
@@ -132,6 +132,11 @@ impl GradientProgressBar {
         self.style
     }
 
+    /// The current width of this bar
+    pub fn bar_width(&self) -> usize {
+        self.bar_width
+    } 
+
     /// The gradient currently attached (if any).
     pub fn gradient(&self) -> Option<Gradient> {
         self.gradient
@@ -145,7 +150,8 @@ impl GradientProgressBar {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
+use super::*;
 
     #[test]
     fn with_total_bytes_defaults_to_main_and_ocean() {
@@ -187,7 +193,7 @@ mod tests {
     fn new_sets_all_fields() {
         let bar = GradientProgressBar::new(
             200,
-            "custom".into(),
+            "custom",
             BarStyle::Minified,
             Some(Gradient::Ice),
         );
@@ -217,7 +223,7 @@ mod tests {
 
     #[test]
     fn finish_and_clear_runs_without_panic() {
-        let bar = GradientProgressBar::new(100, "clear".into(), BarStyle::ClearOnFinish, None);
+        let bar = GradientProgressBar::new(100, "clear", BarStyle::ClearOnFinish, None);
         bar.finish_and_clear();
     }
 
@@ -268,4 +274,31 @@ mod tests {
         bar1.set_message("str ref");
         bar1.finish();
     }
+    
+    /*
+    use std::{thread, time::Duration};
+
+    #[test]
+    fn print_all_gradients_variants_for_inspection() {
+        let gradients = [Gradient::Rose, Gradient::Coral, Gradient::Twilight, Gradient::Midnight, Gradient::Aurora, Gradient::Forest, Gradient::Ice,
+        Gradient::Ember, Gradient::Mint, Gradient::Neon, Gradient::Ocean, Gradient::Sunset,
+        Gradient::Violet,];
+
+        // We iterate over all the disponible gradients
+        for gradient in gradients {
+            // For each gradient, create a `GradientProgressBar`
+            let pb = GradientProgressBar::with_gradient(1000, gradient.name(), gradient);
+
+            // And make the Pb progress
+            for _ in 0..1000 {
+                pb.inc(1);
+                thread::sleep(Duration::from_millis(2));
+            }
+
+            // This sleep is done so that you can observe the Pb.
+            thread::sleep(Duration::from_secs(3));
+        }
+    }
+    */
+
 }
