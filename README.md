@@ -1,6 +1,9 @@
 # GradientProgressBar
 
 A small, self-contained wrapper around [`indicatif::ProgressBar`](https://docs.rs/indicatif) that gives your program a consistent, beautiful look across every operation without repeating `ProgressStyle` boilerplate.
+\
+\
+🔵 Human-written — Written entirely by humans. (*except for `\x1b[38;2;{};{};{}m█` and `█▉▊▋▌▍▎▏  ` visual elements, which I asked a large language model to provide.*)
 
 > [!NOTE]
 > `GradientProgressBar` was originally made for [Enkryptit](https://github.com/VRAM-RAM/Enkryptit) but went too far with gradients.
