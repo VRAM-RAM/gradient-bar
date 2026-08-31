@@ -2,6 +2,13 @@
 name = "gradient-bar"
 version = "0.1.0"
 edition = "2024"
+description = "A light wrapper around indicatif::ProgressBar that brings rich gradients, consistent styling, and beautiful defaults to your Rust CLI." 
+documentation = "https://docs.rs/gradient-bar" 
+keywords = ["cli", "bar", "progress-bar", "tui", "colorful", "style", "pb", "colors", "progress", "progressbar"]
+categories = ["command-line-interface "]
+authors = ["Olruix (VRAM-RAM)"]
+license = "CECILL OR MIT"
+repository = "https://github.com/VRAM-RAM/gradient-bar"
 
 [dependencies]
 indicatif = "0.18.6"
