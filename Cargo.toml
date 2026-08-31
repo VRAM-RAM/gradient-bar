@@ -7,7 +7,7 @@ documentation = "https://docs.rs/gradient-bar"
 keywords = ["cli", "bar", "progress-bar", "tui", "colorful", "style", "pb", "colors", "progress", "progressbar"]
 categories = ["command-line-interface "]
 authors = ["Olruix (VRAM-RAM)"]
-license = "CECILL OR MIT"
+license = "CECILL-2.1 OR MIT"
 repository = "https://github.com/VRAM-RAM/gradient-bar"
 
 [dependencies]
