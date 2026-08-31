@@ -5,6 +5,10 @@ A small, self-contained wrapper around [`indicatif::ProgressBar`](https://docs.r
 > [!NOTE]
 > `GradientProgressBar` was originally made for [Enkryptit](https://github.com/VRAM-RAM/Enkryptit) but went too far with gradients.
 
+<div align="center">
+  <img src="./assets/gradient.gif" alt="Gradient gif as example" width="65%">
+</div>
+
 ## Quick start
 
 The most common case - you know the total size in bytes:
