@@ -27,7 +27,7 @@ pub enum Gradient {
     /// Cool white -> pale blue.
     Ice,
 
-    /// Blue / light cyan green -> light purple 
+    /// Blue / light cyan green -> light purple
     Aurora,
 
     /// Cyan -> light blue / purple
@@ -122,7 +122,7 @@ impl Gradient {
 
 impl Display for Gradient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "`{}`", self.name())
+        write!(f, "{}", self.name())
     }
 }
 
@@ -261,7 +261,7 @@ mod tests {
             Gradient::Twilight,
             Gradient::Coral,
         ] {
-            let expected = format!("`{}`", grad.name());
+            let expected = grad.name().to_string();
             assert_eq!(format!("{grad}"), expected, "Display for {grad:?}");
         }
     }

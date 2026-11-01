@@ -33,7 +33,8 @@ That's it. A green spinner, a wide cyan/blue bar, `bytes/total`, percent and ETA
 
 | Method | Style used | When to use it |
 | --- | --- | --- |
-| `new(len, msg, style, gradient)` | any | Low-level: you pick the total *and* the style *and* the gradient yourself. |
+| `new(len, msg, style, gradient, unit)` | any | Low-level: you pick the total *and* the style *and* the gradient *and* the unit yourself. |
+| `new_with_bar_width(len, msg, style, gradient, bar_width, unit)` | any | Even more low-level: you pick the total *and* the style *and* the gradient *and* the bar width *and* the unit yourself. |
 | `with_total_bytes(total, msg)` | `Main` | Byte-based workload (streams, single-file encrypt/decrypt). |
 | `with_total_steps(total, msg)` | `Steps` | Chunk / step-based workload, e.g. multithreaded splitting. |
 | `with_gradient(total, msg, gradient)` | `Main` | Byte-based workload with a specific [`Gradient`]. |
@@ -85,8 +86,6 @@ Every template uses colors safe on both light and dark terminals, and degrades g
 
 ### Driving the bar
 
-All methods take `&self` - no `mut` needed to drive it.
-
 | Method | What it does |
 | --- | --- |
 | `update(pos)` | Jump to an absolute position. |
@@ -99,6 +98,7 @@ All methods take `&self` - no `mut` needed to drive it.
 | `finish_with_message(msg)` | Mark done, replacing the line with `msg`. |
 | `finish_and_clear()` | Mark done and remove the bar entirely. |
 | `set_style(style)` | Swap the layout of an existing bar. |
+| `set_unit(unit)` | Set the unit of the bar (to `meters`, `liters`, `files`... for example) |
 | `style()` | Read the current style back. |
 | `set_gradient(gradient)` | Swap the gradient (or set `None` for the classic two-tone bar). |
 | `gradient()` | Read the current gradient back. |
@@ -174,7 +174,7 @@ sp.finish_with_message("Key ready");
 #### Clean up afterwards
 
 ```rust
-let mut bar = GradientProgressBar::new(total, "Packaging", BarStyle::ClearOnFinish, None);
+let mut bar = GradientProgressBar::new(total, "Packaging", BarStyle::ClearOnFinish, None, Some("files"));
 // ... bar.update(x) ...
 bar.finish_and_clear();
 ```

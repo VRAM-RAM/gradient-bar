@@ -1,6 +1,6 @@
 [package]
 name = "gradient-bar"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 description = "A light wrapper around indicatif::ProgressBar that brings rich gradients, consistent styling, and beautiful defaults to your Rust CLI." 
 documentation = "https://docs.rs/gradient-bar" 

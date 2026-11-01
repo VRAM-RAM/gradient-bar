@@ -1,7 +1,7 @@
 use crate::gradient::Gradient;
 use indicatif::{ProgressState, ProgressStyle};
 
-/// The look & feel of a [`GradientProgressBar`].
+/// The look & feel of a [`GradientProgressBar`](`crate::GradientProgressBar`).
 ///
 /// This is the **layout**, independent of the gradient. Pick a layout here, and
 /// pair it with any [`Gradient`] (or none, to keep the classic
@@ -20,13 +20,15 @@ pub enum BarStyle {
     /// Indeterminate progress (no known total): animates a spinner + message.
     Spinner,
     /// Like [`BarStyle::Main`], but cleared from the terminal
-    /// once it finishes (pair with [`GradientProgressBar::finish_and_clear`]).
+    /// once it finishes (pair with [`crate::GradientProgressBar::finish_and_clear`]).
     ClearOnFinish,
 }
 
 impl BarStyle {
     /// Default bar width (in cells) used when rendering a gradient.
-    pub const DEFAULT_GRADIENT_WIDTH: usize = 30;
+    ///
+    /// Modified to `25` instead of `30` because indicatif was wrapping the lines.
+    pub const DEFAULT_GRADIENT_WIDTH: usize = 25;
 
     /// Build the [`indicatif::ProgressStyle`] for this layout.
     ///
@@ -34,38 +36,40 @@ impl BarStyle {
     /// (true-color multi-stop). When `None`, the classic two-tone
     /// `{wide_bar:.cyan/blue}` is used. `width` controls the gradient bar's
     /// column count.
-    pub fn to_progress_style(&self, gradient: Option<Gradient>, width: usize) -> ProgressStyle {
-        let gname = gradient.map(Gradient::name).unwrap_or("");
-
+    pub fn to_progress_style(
+        &self,
+        gradient: Option<Gradient>,
+        width: usize,
+        unit: Option<String>,
+    ) -> ProgressStyle {
         let (bar_key, spinner_color) = match gradient {
             Some(_) => ("{grad_bar}", "cyan"),
             None => ("{wide_bar:.cyan/blue}", "green"),
         };
 
+        let unit = match unit {
+            Some(unit) => unit.replace('{', "{{").replace('}', "}}"),
+            None => "chunks".to_string(),
+        };
+
         let template = match self {
-            BarStyle::Main => format!(
+            BarStyle::Main | BarStyle::ClearOnFinish => format!(
                 "{{spinner:.{spinner_color}}} {{msg}} [{{elapsed_precise}}] [{bar_key}] {{bytes}}/{{total_bytes}} ({{percent}}%) {{eta}}",
                 spinner_color = spinner_color,
                 bar_key = bar_key,
             ),
             BarStyle::Minified => format!(
-                "{{spinner:.{spinner_color}}} {{msg}} {{bytes}}/{{total_bytes}} ({{percent}}%) [[{gname}]]",
-                spinner_color = spinner_color,
-                gname = gname,
+                "{{spinner:.{spinner_color}}} {{msg}} [{bar_key}] {{bytes}}/{{total_bytes}} ({{percent}}%)",
             ),
             BarStyle::Steps => format!(
-                "{{spinner:.cyan}} {{msg}} [{bar_key}] {{pos}}/{{len}} chunks ({{percent}}%) {{elapsed_precise}}",
+                "{{spinner:.{spinner_color}}} {{msg}} [{bar_key}] {{pos}}/{{len}} {unit} ({{percent}}%) {{elapsed_precise}}",
                 bar_key = bar_key,
             ),
-            BarStyle::Spinner => "{{spinner:.cyan}} {{msg}}".to_string(),
-            BarStyle::ClearOnFinish => format!(
-                "{{spinner:.{spinner_color}}} {{msg}} [{{elapsed_precise}}] [{bar_key}] {{bytes}}/{{total_bytes}} ({{percent}}%) {{eta}}",
-                spinner_color = spinner_color,
-                bar_key = bar_key,
-            ),
+            BarStyle::Spinner => format!("{{spinner:.{spinner_color}}} {{msg}}"),
         };
 
-        let chars = "█▉▊▋▌▍▎▏  ";
+        //let chars = "█▉▊▋▌▍▎▏  ";
+        let chars = "█▉▊▋▌▍▎▏░";
         let tick = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏ ";
 
         let mut style = ProgressStyle::with_template(&template)
@@ -105,14 +109,14 @@ mod tests {
                 BarStyle::Spinner,
                 BarStyle::ClearOnFinish,
             ] {
-                let _ = style.to_progress_style(gradient, 30);
+                let _ = style.to_progress_style(gradient, 30, Some(String::from("meters")));
             }
         }
     }
 
     #[test]
-    fn default_gradient_width_is_30() {
-        assert_eq!(BarStyle::DEFAULT_GRADIENT_WIDTH, 30);
+    fn default_gradient_width_is_25() {
+        assert_eq!(BarStyle::DEFAULT_GRADIENT_WIDTH, 25);
     }
 
     #[test]
@@ -124,14 +128,14 @@ mod tests {
             BarStyle::Spinner,
             BarStyle::ClearOnFinish,
         ] {
-            let _ = style.to_progress_style(Some(Gradient::Ocean), 0);
-            let _ = style.to_progress_style(None, 0);
+            let _ = style.to_progress_style(Some(Gradient::Ocean), 0, Some(String::from("liters")));
+            let _ = style.to_progress_style(None, 0, None);
         }
     }
 
     #[test]
     fn large_width_builds_without_panic() {
-        let _ = BarStyle::Main.to_progress_style(Some(Gradient::Sunset), 500);
+        let _ = BarStyle::Main.to_progress_style(Some(Gradient::Sunset), 500, None);
     }
 
     #[test]

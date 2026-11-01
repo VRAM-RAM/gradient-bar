@@ -1,3 +1,6 @@
+use std::sync::{Arc, Mutex};
+
+use crate::config::Config;
 use crate::gradient::Gradient;
 use crate::style::BarStyle;
 use indicatif::ProgressBar;
@@ -13,52 +16,99 @@ pub const DEFAULT_GRADIENT: Gradient = Gradient::Ocean;
 #[derive(Debug, Clone)]
 pub struct GradientProgressBar {
     pb: ProgressBar,
-    style: BarStyle,
-    gradient: Option<Gradient>,
-    bar_width: usize,
+    config: Arc<Mutex<Config>>,
 }
 
 impl GradientProgressBar {
-    /// Create a bar with a known total, an explicit layout and an explicit
-    /// style (gradient or not).
-    pub fn new(len: u64, msg: impl Into<String>, style: BarStyle, gradient: Option<Gradient>) -> Self {
+    /// Create a bar with a known total, an explicit layout, an explicit
+    /// style (gradient or not) and a unit (`chunks`, `seconds`, `meters`...)
+    pub fn new(
+        len: u64,
+        msg: impl Into<String>,
+        style: BarStyle,
+        gradient: Option<Gradient>,
+        unit: Option<String>,
+    ) -> Self {
         let bar_width = BarStyle::DEFAULT_GRADIENT_WIDTH;
         let pb = ProgressBar::new(len)
             .with_message(msg.into())
-            .with_style(style.to_progress_style(gradient, bar_width));
+            .with_style(style.to_progress_style(gradient, bar_width, unit.clone()));
+
         Self {
             pb,
-            style,
-            gradient,
-            bar_width,
+            config: Config::arc_mutex(style, gradient, bar_width, unit),
+        }
+    }
+
+    /// Create a bar with a known total, an explicit layout, an explicit
+    /// style (gradient or not), a unit (`chunks`, `seconds`, `meters`...) and a **bar width**.
+    pub fn new_with_bar_width(
+        len: u64,
+        msg: impl Into<String>,
+        style: BarStyle,
+        gradient: Option<Gradient>,
+        bar_width: usize,
+        unit: Option<String>,
+    ) -> Self {
+        let pb = ProgressBar::new(len)
+            .with_message(msg.into())
+            .with_style(style.to_progress_style(gradient, bar_width, unit.clone()));
+
+        Self {
+            pb,
+            config: Config::arc_mutex(style, gradient, bar_width, unit),
         }
     }
 
     /// Create a byte-based bar (the usual entry point) with the default
     /// gradient ([`DEFAULT_GRADIENT`]).
     pub fn with_total_bytes(total: u64, msg: impl Into<String>) -> Self {
-        Self::new(total, msg.into(), BarStyle::Main, Some(DEFAULT_GRADIENT))
+        Self::new(
+            total,
+            msg.into(),
+            BarStyle::Main,
+            Some(DEFAULT_GRADIENT),
+            None,
+        )
     }
 
     /// Create a step/chunk based bar with the default gradient.
     pub fn with_total_steps(total: u64, msg: impl Into<String>) -> Self {
-        Self::new(total, msg.into(), BarStyle::Steps, Some(DEFAULT_GRADIENT))
+        Self::new(
+            total,
+            msg.into(),
+            BarStyle::Steps,
+            Some(DEFAULT_GRADIENT),
+            None,
+        )
     }
 
     /// Create an indeterminate (unknown total) bar animated with a spinner.
     pub fn new_spinner(msg: impl Into<String>) -> Self {
-        Self::new(u64::MAX, msg.into(), BarStyle::Spinner, None)
+        let bar_width = BarStyle::DEFAULT_GRADIENT_WIDTH;
+        let pb = ProgressBar::new_spinner()
+            .with_message(msg.into())
+            .with_style(BarStyle::Spinner.to_progress_style(
+                Some(DEFAULT_GRADIENT),
+                bar_width,
+                None,
+            ));
+
+        Self {
+            pb,
+            config: Config::arc_mutex(BarStyle::Spinner, Some(DEFAULT_GRADIENT), bar_width, None),
+        }
     }
 
     /// Create a byte-based bar with a specific [`Gradient`].
     pub fn with_gradient(total: u64, msg: impl Into<String>, gradient: Gradient) -> Self {
-        Self::new(total, msg.into(), BarStyle::Main, Some(gradient))
+        Self::new(total, msg.into(), BarStyle::Main, Some(gradient), None)
     }
 
     /// Create a byte-based bar keeping the classic two-tone `wide_bar` (no
     /// true-color gradient).
     pub fn with_wide_bar(total: u64, msg: impl Into<String>) -> Self {
-        Self::new(total, msg.into(), BarStyle::Main, None)
+        Self::new(total, msg.into(), BarStyle::Main, None, None)
     }
 
     /// Update the progress to an absolute *position*.
@@ -108,38 +158,64 @@ impl GradientProgressBar {
 
     /// Swap the look & feel of an already-created bar.
     pub fn set_style(&mut self, style: BarStyle) {
-        self.style = style;
-        self.pb
-            .set_style(style.to_progress_style(self.gradient, self.bar_width));
+        let mut config = self.config.lock().expect("The mutex lock shouldn't fail.");
+        config.style = style;
+        self.pb.set_style(style.to_progress_style(
+            config.gradient,
+            config.bar_width,
+            config.unit.clone(),
+        ));
+    }
+
+    pub fn set_unit(&self, unit: impl Into<String>) {
+        let mut config = self.config.lock().expect("Mutex locking shouldn't fail");
+        config.unit = Some(unit.into());
+
+        self.pb.set_style(config.style.to_progress_style(
+            config.gradient,
+            config.bar_width,
+            config.unit.clone(),
+        ));
     }
 
     /// Change the gradient (or set `None` for the classic two-tone bar).
     pub fn set_gradient(&mut self, gradient: Option<Gradient>) {
-        self.gradient = gradient;
-        self.pb
-            .set_style(self.style.to_progress_style(gradient, self.bar_width));
+        let mut config = self.config.lock().expect("The Mutex lock shouldn't fail.");
+        config.gradient = gradient;
+        self.pb.set_style(config.style.to_progress_style(
+            gradient,
+            config.bar_width,
+            config.unit.clone(),
+        ));
     }
 
     /// Set the number of columns the gradient bar occupies.
     pub fn set_bar_width(&mut self, width: usize) {
-        self.bar_width = width.max(1);
-        self.pb
-            .set_style(self.style.to_progress_style(self.gradient, self.bar_width));
+        let mut config = self.config.lock().expect("The mutex lock shouldn't fail.");
+        config.bar_width = width.max(1);
+        self.pb.set_style(config.style.to_progress_style(
+            config.gradient,
+            config.bar_width,
+            config.unit.clone(),
+        ));
     }
 
     /// The current layout of this bar.
     pub fn style(&self) -> BarStyle {
-        self.style
+        let config = self.config.lock().expect("The mutex lock shouldn't fail.");
+        config.style
     }
 
     /// The current width of this bar
     pub fn bar_width(&self) -> usize {
-        self.bar_width
-    } 
+        let config = self.config.lock().expect("The mutex lock shouldn't fail.");
+        config.bar_width
+    }
 
     /// The gradient currently attached (if any).
     pub fn gradient(&self) -> Option<Gradient> {
-        self.gradient
+        let config = self.config.lock().expect("The mutex lock shouldn't fail.");
+        config.gradient
     }
 
     /// Borrow the underlying [`indicatif::ProgressBar`] for advanced use.
@@ -151,7 +227,7 @@ impl GradientProgressBar {
 #[cfg(test)]
 mod tests {
 
-use super::*;
+    use super::*;
 
     #[test]
     fn with_total_bytes_defaults_to_main_and_ocean() {
@@ -168,11 +244,11 @@ use super::*;
     }
 
     #[test]
-    fn new_spinner_uses_spinner_style_no_gradient() {
+    fn new_spinner_uses_spinner_style() {
         let bar = GradientProgressBar::new_spinner("test");
         assert_eq!(bar.style(), BarStyle::Spinner);
-        assert_eq!(bar.gradient(), None);
-        assert_eq!(bar.inner().length(), Some(u64::MAX));
+        assert_eq!(bar.inner().length(), None);
+        assert_eq!(bar.gradient(), Some(DEFAULT_GRADIENT));
     }
 
     #[test]
@@ -196,6 +272,7 @@ use super::*;
             "custom",
             BarStyle::Minified,
             Some(Gradient::Ice),
+            Some(String::from("meters")),
         );
         assert_eq!(bar.style(), BarStyle::Minified);
         assert_eq!(bar.gradient(), Some(Gradient::Ice));
@@ -223,7 +300,7 @@ use super::*;
 
     #[test]
     fn finish_and_clear_runs_without_panic() {
-        let bar = GradientProgressBar::new(100, "clear", BarStyle::ClearOnFinish, None);
+        let bar = GradientProgressBar::new(100, "clear", BarStyle::ClearOnFinish, None, None);
         bar.finish_and_clear();
     }
 
@@ -249,9 +326,9 @@ use super::*;
     fn set_bar_width_clamps_to_minimum_one() {
         let mut bar = GradientProgressBar::with_total_bytes(100, "test");
         bar.set_bar_width(0);
-        assert_eq!(bar.bar_width, 1);
+        assert_eq!(bar.bar_width(), 1);
         bar.set_bar_width(5);
-        assert_eq!(bar.bar_width, 5);
+        assert_eq!(bar.bar_width(), 5);
     }
 
     #[test]
@@ -274,8 +351,9 @@ use super::*;
         bar1.set_message("str ref");
         bar1.finish();
     }
-    
+
     /*
+
     use std::{thread, time::Duration};
 
     #[test]
@@ -300,5 +378,4 @@ use super::*;
         }
     }
     */
-
 }
